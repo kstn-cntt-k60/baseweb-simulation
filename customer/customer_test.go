@@ -90,7 +90,10 @@ func RunAddCustomer(token string, ch chan<- PostResult) {
 func TestAddCustomer(t *testing.T) {
 	loopCount := 10
 
-	token, err := util.Login()
+	client := &http.Client{}
+	defer client.CloseIdleConnections()
+
+	token, err := util.Login(client)
 	if err != nil {
 		t.Error(err)
 	}

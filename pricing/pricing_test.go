@@ -118,8 +118,10 @@ func RunAddPerson(token string, ch chan<- PostResult) {
 
 func TestAddPerson(t *testing.T) {
 	loopCount := 5
+	client := &http.Client{}
+	defer client.CloseIdleConnections()
 
-	token, err := util.Login()
+	token, err := util.Login(client)
 	if err != nil {
 		t.Error(err)
 	}

@@ -2,9 +2,7 @@ package person
 
 import (
 	"baseweb-simulation/util"
-	"bytes"
 	"encoding/json"
-	"errors"
 	"log"
 	"math/rand"
 	"net/http"
@@ -40,7 +38,7 @@ func GeneratePerson(person *Person) error {
 	return err
 }
 
-func AddPerson(token string) error {
+func AddPerson(client *http.Client, token string) error {
 	person := Person{}
 	err := GeneratePerson(&person)
 	if err != nil {
@@ -52,25 +50,11 @@ func AddPerson(token string) error {
 		return err
 	}
 
-	client := http.Client{}
-	body := bytes.NewBuffer(data)
-	req, err := http.NewRequest("POST", util.Url("/api/account/add-party"), body)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("X-Auth-Token", token)
-	req.Header.Set("Content-Type", "application/json")
-
-	res, err := client.Do(req)
+	res, err := util.Post(client, token, "/api/account/add-party", data)
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
-
-	if res.StatusCode != 200 {
-		return errors.New("add person not 200")
-	}
 
 	return nil
 }
@@ -80,9 +64,9 @@ type PostResult struct {
 	duration time.Duration
 }
 
-func RunAddPerson(token string, ch chan<- PostResult) {
+func RunAddPerson(client *http.Client, token string, ch chan<- PostResult) {
 	begin := time.Now()
-	err := AddPerson(token)
+	err := AddPerson(client, token)
 	end := time.Now()
 	duration := end.Sub(begin)
 
@@ -94,7 +78,10 @@ func RunAddPerson(token string, ch chan<- PostResult) {
 }
 
 func AddPersonBenchmark(loop int) {
-	token, err := util.Login()
+	client := &http.Client{}
+	defer client.CloseIdleConnections()
+
+	token, err := util.Login(client)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -103,7 +90,7 @@ func AddPersonBenchmark(loop int) {
 	defer close(ch)
 
 	for i := 0; i < loop; i++ {
-		go RunAddPerson(token, ch)
+		go RunAddPerson(client, token, ch)
 	}
 
 	var errorCount int64 = 0
