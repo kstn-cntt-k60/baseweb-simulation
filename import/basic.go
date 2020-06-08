@@ -7,6 +7,8 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -32,7 +34,7 @@ func GetProducts(client *http.Client, token string) []Product {
 
 	response, err := util.Get(client, token, pathname)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	defer response.Body.Close()
 
@@ -44,7 +46,7 @@ func GetProducts(client *http.Client, token string) []Product {
 	res := Response{}
 	err = json.NewDecoder(response.Body).Decode(&res)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	return res.ProductList
@@ -131,13 +133,17 @@ func RunAddInventoryItem(
 func AddInventoryItemBenchmark(loop int) {
 	warehouseId, err := uuid.Parse("28fb8f4a-5a02-11ea-b26e-14dda9bea6d7")
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	client := &http.Client{}
 	defer client.CloseIdleConnections()
 
 	token, err := util.Login(client)
+	if err != nil {
+		log.Panic(err)
+	}
+
 	products := GetProducts(client, token)
 
 	ch := make(chan PostResult)
@@ -158,4 +164,40 @@ func AddInventoryItemBenchmark(loop int) {
 	}
 
 	log.Println("Error Count", errorCount)
+}
+
+func ViewInventoryItem(client *http.Client, token string) {
+	page, err := strconv.Atoi(os.Getenv("PAGE"))
+	if err != nil {
+		page = 0
+	}
+
+	pathname := fmt.Sprintf(
+		"/api/import/view-inventory-by-warehouse?page=%d&pageSize=10&sortedBy=createdAt&sortOrder=desc&warehouseId=28fb8f4a-5a02-11ea-b26e-14dda9bea6d7",
+		page)
+
+	log.Println("PATHNAME", pathname)
+
+	response, err := util.Get(client, token, pathname)
+	if err != nil {
+		log.Panic(err)
+	}
+	defer response.Body.Close()
+}
+
+func ViewInventoryItemBenchmark() {
+	client := &http.Client{}
+	defer client.CloseIdleConnections()
+
+	token, err := util.Login(client)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	begin := time.Now()
+	ViewInventoryItem(client, token)
+	end := time.Now()
+	duration := end.Sub(begin)
+
+	log.Println(duration.Microseconds())
 }

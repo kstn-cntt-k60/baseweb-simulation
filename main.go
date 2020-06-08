@@ -39,11 +39,14 @@ func main() {
 		for i := 0; i < loop; i++ {
 			importProduct.AddInventoryItemBenchmark(200)
 		}
+	} else if command == "view-inventory-item" {
+		importProduct.ViewInventoryItemBenchmark()
 	} else {
 		fmt.Println("ERROR: command not supported")
 		fmt.Println("Using one of the following commands:")
 		fmt.Println("    - add-person")
 		fmt.Println("    - add-product")
 		fmt.Println("    - add-inventory-item")
+		fmt.Println("    - view-inventory-item")
 	}
 }
