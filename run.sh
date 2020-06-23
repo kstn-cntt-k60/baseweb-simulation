@@ -1,3 +1,3 @@
-for i in `seq 10`;
-    do PAGE=10 ./baseweb-simulation view-inventory-item;
+for i in `seq $SEQ_COUNT`;
+    do ./baseweb-simulation add-inventory-item;
 done
